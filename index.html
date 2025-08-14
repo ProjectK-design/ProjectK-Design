@@ -13,7 +13,7 @@
     --text:#e8eaf6; --muted:#aeb3d0; --bar:#23284a; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
   }
   html,body{height:100%}
-  body{margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  body{margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
     color:var(--text);
     background: radial-gradient(1200px 600px at 10% -20%, rgba(124,156,255,.15), transparent 40%),
                radial-gradient(1200px 600px at 90% 120%, rgba(168,140,255,.15), transparent 40%),
@@ -68,16 +68,31 @@
   .dock{margin:0 auto; max-width:820px; background: rgba(22,26,47,.85); border:1px solid rgba(255,255,255,.08);
     backdrop-filter: blur(8px); padding:8px; border-radius:999px; box-shadow:var(--shadow); display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
   /* Lock overlay */
-  #lockGate{position:fixed; inset:0; background:rgba(15,18,32,.96); display:flex; align-items:center; justify-content:center; z-index:9999; flex-direction:column; gap:16px; text-align:center; padding:20px}
+  #lockGate{position:fixed; inset:0; background:rgba(15,18,32,.96); display:flex; align-items:center; justify-content:center; z-index:9999; flex-direction:column; gap:12px; text-align:center; padding:20px}
   #lockGate.hidden{display:none}
+  #pinBox{display:none; gap:8px; flex-direction:column; width:min(320px, 90vw)}
+  #pinBox.visible{display:flex}
+  #pinBox input{font-size:18px; text-align:center; letter-spacing:3px}
 </style>
 </head>
 <body>
   <div id="lockGate">
     <h2>Unlock Project Kieran</h2>
-    <p class="hint" id="lockHint">Use Face ID / Touch ID / device PIN</p>
-    <button class="btn primary" id="unlockBtn">Unlock</button>
-    <button class="btn" id="setupLockBtn">Set up biometric lock</button>
+    <p class="hint" id="lockHint">Use Face ID / Touch ID / device PIN, or your app PIN</p>
+    <div class="flex">
+      <button class="btn primary" id="unlockBtn">Unlock with Face ID</button>
+      <button class="btn" id="setupLockBtn">Set up biometric lock</button>
+      <button class="btn" id="pinSetupBtn">Set up PIN</button>
+      <button class="btn" id="pinUnlockBtn">Unlock with PIN</button>
+    </div>
+    <div id="pinBox">
+      <label>Enter PIN</label>
+      <input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="••••" />
+      <div class="flex" style="justify-content:center">
+        <button class="btn primary" id="pinSubmitBtn">Unlock</button>
+        <button class="btn" id="pinCancelBtn">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <header>
@@ -260,23 +275,15 @@ async function enablePush(){
   localStorage.setItem('onesignal_app_id', appId);
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(function(OneSignal) {
-    OneSignal.init({
-      appId: appId,
-      allowLocalhostAsSecureOrigin: true,
-      safari_web_id: undefined
-    });
-    OneSignal.Notifications.requestPermission().then(()=>{
-      alert('Push notifications enabled.');
-    });
+    OneSignal.init({ appId: appId, allowLocalhostAsSecureOrigin: true });
+    OneSignal.Notifications.requestPermission().then(()=> alert('Push notifications enabled.'));
   });
 }
 function initPushIfConfigured(){
   const appId = localStorage.getItem('onesignal_app_id');
   if(!appId) return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(function(OneSignal) {
-    OneSignal.init({ appId, allowLocalhostAsSecureOrigin: true });
-  });
+  window.OneSignalDeferred.push(function(OneSignal) { OneSignal.init({ appId, allowLocalhostAsSecureOrigin: true }); });
 }
 
 /* ======== Data & UI ======== */
@@ -367,6 +374,10 @@ function init(){
   document.getElementById('syncBtn').addEventListener('click', syncNow);
   document.getElementById('unlockBtn').addEventListener('click', unlockWithBiometric);
   document.getElementById('setupLockBtn').addEventListener('click', setupBiometric);
+  document.getElementById('pinSetupBtn').addEventListener('click', setupPIN);
+  document.getElementById('pinUnlockBtn').addEventListener('click', showPINBox);
+  document.getElementById('pinSubmitBtn').addEventListener('click', submitPIN);
+  document.getElementById('pinCancelBtn').addEventListener('click', ()=>document.getElementById('pinBox').classList.remove('visible'));
   document.getElementById('pushBtn').addEventListener('click', enablePush);
   updateOverall();
   updateStreakAndAverage();
@@ -406,7 +417,6 @@ function updateStreakAndAverage(){
   const weekAvg = Math.round(percents.reduce((a,b)=>a+b,0) / Math.max(1, percents.length));
   document.getElementById('weekAvgPill').textContent = `7-day avg: ${weekAvg}%`;
 
-  const allDates = dates.concat([state.date]).sort();
   const map = {};
   dates.forEach(d=>{
     const snap = state.history[d];
@@ -430,27 +440,36 @@ function updateStreakAndAverage(){
 
 /* ===== Finance double-check ===== */
 async function verifyFinance(){
-  if(localStorage.getItem('lock_enabled') !== '1') return true;
+  if(localStorage.getItem('lock_enabled') !== '1' && !localStorage.getItem('pin_hash')) return true;
   try{
     await performWebAuthnGet();
     return true;
   }catch(e){
-    alert('Verification required to open Finance.');
-    return false;
+    if(localStorage.getItem('pin_hash')){ showPINBox(); return false; }
+    alert('Verification required to open Finance.'); return false;
   }
 }
 
-/* ===== WebAuthn biometric lock ===== */
+/* ===== WebAuthn biometric lock (iOS-friendly) ===== */
+function supportsWebAuthn(){ return 'PublicKeyCredential' in window; }
+
 async function setupBiometric(){
-  if(!('PublicKeyCredential' in window)){ alert('WebAuthn not supported on this device/browser.'); return; }
+  if(!supportsWebAuthn()){
+    alert('This mode does not support Face ID/Touch ID. Open in Safari or install to Home Screen.');
+    return;
+  }
+  const rpId = location.hostname;
   const userId = new Uint8Array(16); crypto.getRandomValues(userId);
   const challenge = new Uint8Array(32); crypto.getRandomValues(challenge);
   try{
     const cred = await navigator.credentials.create({
       publicKey: {
-        challenge, rp:{ name:'Project Kieran' }, user:{ id:userId, name:'user@example.com', displayName:'PK User' },
-        pubKeyCredParams:[{type:'public-key', alg:-7},{type:'public-key', alg:-257}],
-        authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required' }
+        challenge,
+        rp: { id: rpId, name: 'Project Kieran' },
+        user: { id: userId, name: 'pk-user@'+rpId, displayName: 'PK User' },
+        pubKeyCredParams: [{type:'public-key', alg:-7},{type:'public-key', alg:-257}],
+        authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 60000
       }
     });
     const id = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
@@ -459,25 +478,81 @@ async function setupBiometric(){
     alert('Biometric lock enabled.');
     document.getElementById('lockGate').classList.remove('hidden');
   }catch(e){
-    alert('Biometric setup failed or cancelled.');
+    console.warn('WebAuthn create failed:', e);
+    alert('Couldn’t set up biometrics. If you cancelled the prompt, try again.');
   }
 }
+
 async function performWebAuthnGet(){
+  if(!supportsWebAuthn()) throw new Error('WebAuthn not supported');
   const idB64 = localStorage.getItem('webauthn_id');
   const allow = idB64 ? [{ type:'public-key', id: Uint8Array.from(atob(idB64), c=>c.charCodeAt(0)) }] : undefined;
   const challenge = new Uint8Array(32); crypto.getRandomValues(challenge);
   const cred = await navigator.credentials.get({
-    publicKey: { challenge, userVerification:'required', allowCredentials: allow }
+    publicKey: {
+      challenge,
+      userVerification:'required',
+      allowCredentials: allow,
+      timeout: 60000,
+      rpId: location.hostname
+    }
   });
   return cred;
 }
+
 async function unlockWithBiometric(){
-  if(localStorage.getItem('lock_enabled') !== '1'){ document.getElementById('lockGate').classList.add('hidden'); return; }
+  if(localStorage.getItem('lock_enabled') !== '1' && !localStorage.getItem('pin_hash')){
+    document.getElementById('lockGate').classList.add('hidden'); return;
+  }
   try{
     await performWebAuthnGet();
     document.getElementById('lockGate').classList.add('hidden');
   }catch(e){
-    document.getElementById('lockHint').textContent = 'Unlock failed. Try again.';
+    if(localStorage.getItem('pin_hash')){ showPINBox(); }
+    else { document.getElementById('lockHint').textContent = 'Face ID failed. You can set a PIN as fallback.'; }
+  }
+}
+
+/* ===== PIN fallback ===== */
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomSalt(len=12){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let out=''; for(let i=0;i<len;i++){ out += chars[Math.floor(Math.random()*chars.length)]; }
+  return out;
+}
+async function setupPIN(){
+  const a = prompt('Create a 4–8 digit PIN:');
+  if(!a || a.length<4 || a.length>8 || !/^[0-9]+$/.test(a)){ alert('PIN must be 4–8 digits.'); return; }
+  const b = prompt('Confirm your PIN:');
+  if(a!==b){ alert('PINs do not match.'); return; }
+  const salt = randomSalt();
+  const hash = await sha256Hex(a + ':' + salt);
+  localStorage.setItem('pin_salt', salt);
+  localStorage.setItem('pin_hash', hash);
+  localStorage.setItem('lock_enabled','1');
+  alert('PIN set. You can unlock with Face ID or PIN.');
+  document.getElementById('lockGate').classList.remove('hidden');
+}
+function showPINBox(){
+  document.getElementById('pinBox').classList.add('visible');
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinInput').focus();
+}
+async function submitPIN(){
+  const pin = document.getElementById('pinInput').value.trim();
+  const salt = localStorage.getItem('pin_salt');
+  const want = localStorage.getItem('pin_hash');
+  if(!salt || !want){ alert('No PIN set.'); return; }
+  const got = await sha256Hex(pin + ':' + salt);
+  if(got === want){
+    document.getElementById('pinBox').classList.remove('visible');
+    document.getElementById('lockGate').classList.add('hidden');
+  }else{
+    alert('Incorrect PIN');
   }
 }
 
@@ -629,7 +704,7 @@ function resetSectionDay(){
 function openSettings(){
   const body = document.getElementById('settingsBody');
   body.innerHTML = '';
-  // Cloud + Push quick config
+  // Quick config for IDs
   const cfg = document.createElement('div');
   cfg.style="padding:8px 0 16px; border-bottom:1px dashed rgba(255,255,255,.12)";
   cfg.innerHTML = `
@@ -650,7 +725,6 @@ function openSettings(){
   `;
   body.appendChild(cfg);
 
-  // Sections
   state.sections.forEach(sec=>{
     const row = document.createElement('div');
     row.style="padding:10px 0; border-bottom:1px dashed rgba(255,255,255,.06)";
@@ -678,7 +752,6 @@ function openSettings(){
   add.innerHTML = `<button class="btn" id="addSectionBtn">Add Section</button>`;
   body.appendChild(add);
 
-  // Handlers
   document.getElementById('saveGcid').addEventListener('click', ()=>{
     const v = document.getElementById('gcid').value.trim();
     if(!v.includes('.apps.googleusercontent.com')){ alert('That does not look like a valid Client ID.'); return; }
