@@ -1,10 +1,11 @@
 {
   "name": "Project Kieran",
-  "short_name": "Project Kieran",
-  "start_url": "./index.html",
+  "short_name": "Kieran",
+  "start_url": "/ProjectK-Design/",
+  "scope": "/ProjectK-Design/",
   "display": "standalone",
-  "background_color": "#0f1220",
   "theme_color": "#0f1220",
+  "background_color": "#0f1220",
   "icons": [
     {
       "src": "icons/icon-192.png",
