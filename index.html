@@ -80,6 +80,7 @@
     <h2>Unlock Project Kieran</h2>
     <p class="hint" id="lockHint">Use Face ID / Touch ID / device PIN, or your app PIN</p>
     <div class="flex">
+      <button onclick="forceRefreshApp()">Force Refresh App</button>
       <button class="btn primary" id="unlockBtn">Unlock with Face ID</button>
       <button class="btn" id="setupLockBtn">Set up biometric lock</button>
       <button class="btn" id="pinSetupBtn">Set up PIN</button>
@@ -847,6 +848,24 @@ async function syncNow(){
   saveLocal(state);
   await saveToDrive(state);
 }
+<script>
+function forceRefreshApp(){
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(regs => Promise.all(regs.map(r => r.unregister())))
+      .then(() => {
+        alert('Cache cleared. Reloading latest version...');
+        location.reload(true);
+      })
+      .catch(err => {
+        console.error('Service Worker clear failed:', err);
+        alert('Could not clear cache automatically. You may need to refresh manually.');
+      });
+  } else {
+    alert('Service Workers not supported in this browser.');
+  }
+}
+</script>
 </script>
 </body>
 </html>
