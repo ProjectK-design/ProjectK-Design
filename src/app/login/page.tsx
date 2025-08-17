@@ -17,18 +17,48 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [showGoogleAuth, setShowGoogleAuth] = useState(true)
+  const [showGoogleAuth, setShowGoogleAuth] = useState(false) // Start with false, enable only if OAuth works
   const router = useRouter()
 
-  // Check if user is already logged in
+  // Check if user is already logged in and test OAuth provider
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push('/')
+        router.push('/dashboard')
       }
     }
+    
+    // Test if Google OAuth is available - only enable if it works
+    const testOAuthProvider = async () => {
+      try {
+        // Check if we can get OAuth provider configuration
+        const { data, error } = await supabase.auth.getSession()
+        
+        if (!error) {
+          // Try to initiate OAuth with skipBrowserRedirect to test provider
+          const oauthResult = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: `${window.location.origin}/dashboard`,
+              skipBrowserRedirect: true
+            }
+          })
+          
+          // If no error, OAuth is configured properly
+          if (!oauthResult.error) {
+            setShowGoogleAuth(true)
+          }
+        }
+      } catch (error) {
+        // If any error occurs, keep Google auth disabled
+        console.log('Google OAuth not available:', error)
+        setShowGoogleAuth(false)
+      }
+    }
+    
     checkAuth()
+    testOAuthProvider()
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,7 +84,7 @@ export default function LoginPage() {
         if (error) throw error
         
         toast.success('Welcome back!')
-        router.push('/')
+        router.push('/dashboard')
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
@@ -69,22 +99,20 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/dashboard`
         }
       })
       
       if (error) {
-        // If Google OAuth is not configured, hide the button and show a message
-        if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
-          setShowGoogleAuth(false)
-          toast.info('Google sign-in is not currently available. Please use email/password.')
-          return
-        }
-        throw error
+        // Always hide Google auth on any OAuth error and show helpful message
+        setShowGoogleAuth(false)
+        toast.info('Google sign-in is not currently available. Please use email/password.')
+        return
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Google sign-in failed'
-      toast.error(errorMessage)
+      // Hide Google auth on any error
+      setShowGoogleAuth(false)
+      toast.info('Google sign-in is not currently available. Please use email/password.')
     }
   }
 
@@ -209,24 +237,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Demo Account Notice */}
-        <div className="mt-6 text-center">
-          <Card className="bg-muted/50">
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground">
-                <strong>Demo Mode:</strong> You can also continue without authentication to explore the app features.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => router.push('/')}
-              >
-                Continue as Guest
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   )

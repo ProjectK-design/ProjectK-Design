@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { toast } from 'sonner'
 import { GoalInsert } from '@/lib/database.types'
 
@@ -27,6 +28,7 @@ interface GoalFormProps {
 
 export function GoalForm({ onGoalCreated }: GoalFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   
   const {
     register,
@@ -51,6 +53,7 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
         category: data.category || null,
         deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
         xp_value: Number(data.xp_value) || 10,
+        user_id: user?.id || null, // Set to user ID if authenticated, null for guest mode
       }
 
       console.log('Submitting goal data:', goalData)

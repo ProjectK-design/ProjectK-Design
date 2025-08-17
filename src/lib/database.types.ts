@@ -24,6 +24,7 @@ export interface Database {
           completed: boolean
           xp_value: number
           xp_earned: number
+          user_id: string | null
         }
         Insert: {
           id?: string
@@ -39,6 +40,7 @@ export interface Database {
           completed?: boolean
           xp_value?: number
           xp_earned?: number
+          user_id?: string | null
         }
         Update: {
           id?: string
@@ -54,6 +56,7 @@ export interface Database {
           completed?: boolean
           xp_value?: number
           xp_earned?: number
+          user_id?: string | null
         }
       }
     }

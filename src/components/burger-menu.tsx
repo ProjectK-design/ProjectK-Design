@@ -33,7 +33,7 @@ export function BurgerMenu() {
     try {
       await signOut()
       toast.success('Logged out successfully!')
-      router.push('/login')
+      router.push('/')
     } catch {
       toast.error('Failed to log out')
     }

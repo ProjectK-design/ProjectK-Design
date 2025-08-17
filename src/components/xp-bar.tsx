@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { Goal } from '@/lib/database.types'
 import { Zap, Calendar, TrendingUp, Trophy, Star, Target, Flame, Award } from 'lucide-react'
 
@@ -51,6 +52,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [loading, setLoading] = useState(true)
   const [showAchievements, setShowAchievements] = useState(false)
+  const { user } = useAuth()
 
   const calculateLevel = (totalXP: number) => {
     // Level formula: each level requires 100 * level XP (100, 200, 300, etc.)
@@ -133,11 +135,19 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
     try {
       setLoading(true)
       
-      // Get all goals
-      const { data: goals, error } = await supabase
+      // Get goals filtered by user
+      let query = supabase
         .from('goals')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // Filter by user - show user's goals if authenticated, or anonymous goals if guest
+      if (user) {
+        query = query.eq('user_id', user.id)
+      } else {
+        query = query.is('user_id', null)
+      }
+
+      const { data: goals, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
 
@@ -200,7 +210,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     fetchXPStats()

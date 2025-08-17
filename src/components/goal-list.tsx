@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { Goal } from '@/lib/database.types'
 import { toast } from 'sonner'
 import { GoalCard } from './goal-card'
@@ -23,13 +24,22 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
+  const { user } = useAuth()
 
   const fetchGoals = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('goals')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // Filter by user - show user's goals if authenticated, or anonymous goals if guest
+      if (user) {
+        query = query.eq('user_id', user.id)
+      } else {
+        query = query.is('user_id', null)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setGoals(data || [])
@@ -43,7 +53,7 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
 
   useEffect(() => {
     fetchGoals()
-  }, [refreshTrigger])
+  }, [refreshTrigger, user])
 
   // Filter and sort goals based on filters
   const filteredAndSortedGoals = useMemo(() => {
