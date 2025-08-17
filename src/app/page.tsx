@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GoalForm } from '@/components/goal-form'
 import { GoalList } from '@/components/goal-list'
 import { XPBar } from '@/components/xp-bar'
+import { BurgerMenu } from '@/components/burger-menu'
 import { Button } from '@/components/ui/button'
 import { Plus, Target } from 'lucide-react'
 
@@ -19,12 +20,24 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <header className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Target className="h-8 w-8" />
-            <h1 className="text-4xl font-bold">Project K</h1>
+        <header className="mb-8">
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Target className="h-6 w-6" />
+              <span className="text-xl font-bold">Project K</span>
+            </div>
+            <BurgerMenu />
           </div>
-          <p className="text-muted-foreground text-lg">Track your goals and make progress every day</p>
+          
+          {/* Main Header */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Target className="h-8 w-8" />
+              <h1 className="text-4xl font-bold">Project K</h1>
+            </div>
+            <p className="text-muted-foreground text-lg">Track your goals and make progress every day</p>
+          </div>
         </header>
 
         {/* XP Bar - Full Width */}
