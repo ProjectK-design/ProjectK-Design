@@ -1,15 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { Goal } from '@/lib/database.types'
 import { toast } from 'sonner'
-import { Plus, Minus, Check, Calendar, Target } from 'lucide-react'
-import { GoalActions } from './goal-actions'
-import { GoalEditForm } from './goal-edit-form'
+import { GoalCard } from './goal-card'
 
 interface GoalListProps {
   refreshTrigger?: number
@@ -19,7 +15,6 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
 
   const fetchGoals = async () => {
     try {
@@ -50,12 +45,14 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
       if (!goal) return
 
       const isCompleted = newValue >= goal.target_value
+      const xpToAward = isCompleted && !goal.completed ? goal.xp_value : goal.xp_earned
       
       const { error } = await supabase
         .from('goals')
         .update({ 
           current_value: newValue,
-          completed: isCompleted
+          completed: isCompleted,
+          xp_earned: xpToAward
         })
         .eq('id', goalId)
 
@@ -63,12 +60,12 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
 
       setGoals(prev => prev.map(g => 
         g.id === goalId 
-          ? { ...g, current_value: newValue, completed: isCompleted }
+          ? { ...g, current_value: newValue, completed: isCompleted, xp_earned: xpToAward }
           : g
       ))
 
       if (isCompleted && !goal.completed) {
-        toast.success('Goal completed! 🎉')
+        toast.success(`Goal completed! +${goal.xp_value} XP earned! 🎉`)
       }
     } catch (error) {
       console.error('Error updating goal:', error)
@@ -89,20 +86,32 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
     setUpdatingGoals(prev => new Set(prev).add(goalId))
     
     try {
+      const newCompletedStatus = !goal.completed
+      const xpToAward = newCompletedStatus ? goal.xp_value : 0
+      
       const { error } = await supabase
         .from('goals')
-        .update({ completed: !goal.completed })
+        .update({ 
+          completed: newCompletedStatus,
+          xp_earned: xpToAward,
+          current_value: newCompletedStatus ? goal.target_value : goal.current_value
+        })
         .eq('id', goalId)
 
       if (error) throw error
 
       setGoals(prev => prev.map(g => 
         g.id === goalId 
-          ? { ...g, completed: !g.completed }
+          ? { 
+              ...g, 
+              completed: newCompletedStatus, 
+              xp_earned: xpToAward,
+              current_value: newCompletedStatus ? goal.target_value : g.current_value
+            }
           : g
       ))
 
-      toast.success(goal.completed ? 'Goal reopened' : 'Goal marked complete!')
+      toast.success(goal.completed ? 'Goal reopened' : `Goal completed! +${goal.xp_value} XP earned! 🎉`)
     } catch (error) {
       console.error('Error toggling goal:', error)
       toast.error('Failed to update goal')
@@ -113,20 +122,6 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
         return newSet
       })
     }
-  }
-
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100)
-  }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return null
-    return new Date(dateString).toLocaleDateString()
-  }
-
-  const handleGoalUpdated = () => {
-    setEditingGoal(null)
-    fetchGoals()
   }
 
   if (loading) {
@@ -143,120 +138,18 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
     )
   }
 
-  if (editingGoal) {
-    return (
-      <div className="space-y-4">
-        <GoalEditForm 
-          goal={editingGoal} 
-          onGoalUpdated={handleGoalUpdated}
-          onCancel={() => setEditingGoal(null)}
-        />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
-      {goals.map((goal) => {
-        const progressPercentage = getProgressPercentage(goal.current_value, goal.target_value)
-        const isUpdating = updatingGoals.has(goal.id)
-        
-        return (
-          <Card key={goal.id} className={`${goal.completed ? 'opacity-75' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className={`${goal.completed ? 'line-through' : ''}`}>
-                  {goal.title}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={goal.completed ? "secondary" : "default"}
-                    size="sm"
-                    onClick={() => toggleComplete(goal.id)}
-                    disabled={isUpdating}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <GoalActions 
-                    goal={goal} 
-                    onGoalUpdated={fetchGoals}
-                    onEdit={setEditingGoal}
-                  />
-                </div>
-              </div>
-              {goal.description && (
-                <p className="text-sm text-muted-foreground">{goal.description}</p>
-              )}
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Target className="h-4 w-4" />
-                <span>{goal.current_value} / {goal.target_value} {goal.unit}</span>
-                {goal.category && (
-                  <>
-                    <span>•</span>
-                    <span>{goal.category}</span>
-                  </>
-                )}
-                {goal.deadline && (
-                  <>
-                    <span>•</span>
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(goal.deadline)}</span>
-                  </>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progress</span>
-                  <span>{progressPercentage.toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-              
-              {!goal.completed && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateProgress(goal.id, Math.max(0, goal.current_value - 1))}
-                    disabled={isUpdating || goal.current_value <= 0}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  
-                  <Input
-                    type="number"
-                    value={goal.current_value}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value) || 0
-                      updateProgress(goal.id, value)
-                    }}
-                    className="flex-1 text-center"
-                    disabled={isUpdating}
-                  />
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateProgress(goal.id, goal.current_value + 1)}
-                    disabled={isUpdating}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )
-      })}
+      {goals.map((goal) => (
+        <GoalCard
+          key={goal.id}
+          goal={goal}
+          onGoalUpdated={fetchGoals}
+          isUpdating={updatingGoals.has(goal.id)}
+          onUpdateProgress={updateProgress}
+          onToggleComplete={toggleComplete}
+        />
+      ))}
     </div>
   )
 }

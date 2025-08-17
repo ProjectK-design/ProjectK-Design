@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { GoalForm } from '@/components/goal-form'
 import { GoalList } from '@/components/goal-list'
+import { XPBar } from '@/components/xp-bar'
 import { Button } from '@/components/ui/button'
 import { Plus, Target } from 'lucide-react'
 
@@ -25,6 +26,9 @@ export default function Home() {
           </div>
           <p className="text-muted-foreground text-lg">Track your goals and make progress every day</p>
         </header>
+
+        {/* XP Bar - Full Width */}
+        <XPBar refreshTrigger={refreshTrigger} />
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/3">

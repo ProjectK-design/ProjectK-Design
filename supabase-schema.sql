@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS goals (
   deadline TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  completed BOOLEAN DEFAULT FALSE
+  completed BOOLEAN DEFAULT FALSE,
+  xp_value NUMERIC DEFAULT 10,
+  xp_earned NUMERIC DEFAULT 0
 );
 
 -- Create an index on created_at for sorting

@@ -22,6 +22,8 @@ export interface Database {
           created_at: string
           updated_at: string
           completed: boolean
+          xp_value: number
+          xp_earned: number
         }
         Insert: {
           id?: string
@@ -35,6 +37,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           completed?: boolean
+          xp_value?: number
+          xp_earned?: number
         }
         Update: {
           id?: string
@@ -48,6 +52,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           completed?: boolean
+          xp_value?: number
+          xp_earned?: number
         }
       }
     }

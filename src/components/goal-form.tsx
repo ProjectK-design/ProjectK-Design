@@ -18,6 +18,7 @@ type GoalFormData = {
   unit: string
   category?: string
   deadline?: string
+  xp_value: number
 }
 
 interface GoalFormProps {
@@ -32,7 +33,11 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<GoalFormData>()
+  } = useForm<GoalFormData>({
+    defaultValues: {
+      xp_value: 10
+    }
+  })
 
   const onSubmit = async (data: GoalFormData) => {
     setIsLoading(true)
@@ -45,6 +50,7 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
         unit: data.unit,
         category: data.category || null,
         deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
+        xp_value: data.xp_value || 10,
       }
 
       const { error } = await supabase
@@ -57,7 +63,15 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
       }
 
       toast.success('Goal created successfully!')
-      reset()
+      reset({
+        title: '',
+        description: '',
+        target_value: 0,
+        unit: '',
+        category: '',
+        deadline: '',
+        xp_value: 10
+      })
       onGoalCreated?.()
     } catch (error) {
       console.error('Error creating goal:', error)
@@ -78,7 +92,7 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              {...register('title')}
+              {...register('title', { required: 'Title is required' })}
               placeholder="e.g., Run 100 miles"
             />
             {errors.title && (
@@ -103,7 +117,11 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
                 id="target_value"
                 type="number"
                 step="0.01"
-                {...register('target_value', { valueAsNumber: true })}
+                {...register('target_value', { 
+                  required: 'Target value is required',
+                  valueAsNumber: true,
+                  min: { value: 0.01, message: 'Target must be greater than 0' }
+                })}
                 placeholder="100"
               />
               {errors.target_value && (
@@ -115,7 +133,7 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
               <Label htmlFor="unit">Unit</Label>
               <Input
                 id="unit"
-                {...register('unit')}
+                {...register('unit', { required: 'Unit is required' })}
                 placeholder="miles"
               />
               {errors.unit && (
@@ -124,13 +142,34 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              {...register('category')}
-              placeholder="e.g., Health, Learning, etc."
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                {...register('category')}
+                placeholder="e.g., Health, Learning"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="xp_value">XP Value</Label>
+              <Input
+                id="xp_value"
+                type="number"
+                min="1"
+                max="100"
+                {...register('xp_value', { 
+                  valueAsNumber: true,
+                  min: { value: 1, message: 'XP must be at least 1' },
+                  max: { value: 100, message: 'XP cannot exceed 100' }
+                })}
+                placeholder="10"
+              />
+              {errors.xp_value && (
+                <p className="text-sm text-red-500 mt-1">{errors.xp_value.message}</p>
+              )}
+            </div>
           </div>
 
           <div>
