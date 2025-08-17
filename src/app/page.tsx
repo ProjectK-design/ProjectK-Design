@@ -6,6 +6,7 @@ import { GoalList } from '@/components/goal-list'
 import { XPBar } from '@/components/xp-bar'
 import { BurgerMenu } from '@/components/burger-menu'
 import { GoalFiltersComponent, type GoalFilters } from '@/components/goal-filters'
+import { AuthGuard } from '@/components/auth-guard'
 import { Button } from '@/components/ui/button'
 import { Plus, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -58,8 +59,9 @@ export default function Home() {
   }, [refreshTrigger])
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <AuthGuard requireAuth={false}>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
         <header className="mb-8">
           {/* Top Navigation */}
           <div className="flex items-center justify-between mb-6">
@@ -126,7 +128,8 @@ export default function Home() {
             />
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }

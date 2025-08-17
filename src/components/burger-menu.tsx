@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,12 +25,18 @@ import { toast } from 'sonner'
 
 export function BurgerMenu() {
   const { theme, setTheme } = useTheme()
+  const { user, signOut } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
 
-  const handleLogout = () => {
-    // For now, just show a toast since we don't have authentication yet
-    // This can be replaced with actual logout logic when auth is implemented
-    toast.success('Logged out successfully!')
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast.success('Logged out successfully!')
+      router.push('/login')
+    } catch {
+      toast.error('Failed to log out')
+    }
     setIsOpen(false)
   }
 
@@ -63,8 +71,12 @@ export function BurgerMenu() {
             <User className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">User</span>
-            <span className="text-xs text-muted-foreground">Goal Tracker</span>
+            <span className="text-sm font-medium">
+              {user?.email?.split('@')[0] || 'Guest'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {user ? 'Authenticated' : 'Guest Mode'}
+            </span>
           </div>
         </div>
         
@@ -121,14 +133,24 @@ export function BurgerMenu() {
         
         <DropdownMenuSeparator />
         
-        {/* Logout */}
-        <DropdownMenuItem
-          onClick={handleLogout}
-          className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </DropdownMenuItem>
+        {/* Auth Actions */}
+        {user ? (
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem
+            onClick={() => router.push('/login')}
+            className="cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign In
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
