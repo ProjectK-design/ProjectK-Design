@@ -5,7 +5,11 @@
       "Bash(npm install:*)",
       "Bash(git add:*)",
       "Bash(npm run build:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_symbol",
+      "mcp__serena__replace_symbol_body",
+      "Bash(timeout 10 npm run dev)"
     ],
     "deny": [],
     "ask": []
