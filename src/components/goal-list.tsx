@@ -9,9 +9,10 @@ import { GoalCard } from './goal-card'
 
 interface GoalListProps {
   refreshTrigger?: number
+  onGoalUpdated?: () => void
 }
 
-export function GoalList({ refreshTrigger }: GoalListProps) {
+export function GoalList({ refreshTrigger, onGoalUpdated }: GoalListProps) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
@@ -86,8 +87,8 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
         }
       }
       
-      // Trigger data refresh
-      fetchGoals()
+      // Trigger XP bar refresh
+      onGoalUpdated?.()
     } catch (error) {
       console.error('Error updating goal:', error)
       toast.error('Failed to update progress')
@@ -133,6 +134,9 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
       ))
 
       toast.success(goal.completed ? 'Goal reopened' : `Goal completed! +${goal.xp_value} XP earned! 🎉`)
+      
+      // Trigger XP bar refresh
+      onGoalUpdated?.()
     } catch (error) {
       console.error('Error toggling goal:', error)
       toast.error('Failed to update goal')
@@ -165,7 +169,10 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
         <GoalCard
           key={goal.id}
           goal={goal}
-          onGoalUpdated={fetchGoals}
+          onGoalUpdated={() => {
+            fetchGoals()
+            onGoalUpdated?.()
+          }}
           isUpdating={updatingGoals.has(goal.id)}
           onUpdateProgress={updateProgress}
           onToggleComplete={toggleComplete}

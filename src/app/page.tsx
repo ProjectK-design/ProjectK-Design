@@ -17,6 +17,10 @@ export default function Home() {
     setRefreshTrigger(prev => prev + 1)
   }
 
+  const handleGoalUpdated = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -71,7 +75,10 @@ export default function Home() {
           </div>
 
           <div className="lg:w-2/3">
-            <GoalList refreshTrigger={refreshTrigger} />
+            <GoalList 
+              refreshTrigger={refreshTrigger} 
+              onGoalUpdated={handleGoalUpdated}
+            />
           </div>
         </div>
       </div>
