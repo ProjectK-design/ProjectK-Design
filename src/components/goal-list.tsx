@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
@@ -26,7 +26,7 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
   const { user } = useAuth()
 
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
     try {
       let query = supabase
         .from('goals')
@@ -49,11 +49,11 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchGoals()
-  }, [refreshTrigger, user])
+  }, [refreshTrigger, user, fetchGoals])
 
   // Filter and sort goals based on filters
   const filteredAndSortedGoals = useMemo(() => {

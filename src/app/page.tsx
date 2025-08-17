@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Target, Trophy, TrendingUp, Users, CheckCircle, Zap, ArrowRight } from 'lucide-react'
+import { Target, TrendingUp, CheckCircle, Zap, ArrowRight } from 'lucide-react'
 
 export default function LandingPage() {
   const { user, loading } = useAuth()
@@ -189,7 +189,7 @@ export default function LandingPage() {
               <h4 className="text-2xl font-bold mb-4">Ready to Transform Your Goals?</h4>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                 Join thousands of achievers who use Project K to turn their aspirations into reality. 
-                Start your journey today—it's completely free.
+                Start your journey today—it&apos;s completely free.
               </p>
               <Button 
                 size="lg" 

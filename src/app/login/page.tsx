@@ -33,7 +33,7 @@ export default function LoginPage() {
     const testOAuthProvider = async () => {
       try {
         // Check if we can get OAuth provider configuration
-        const { data, error } = await supabase.auth.getSession()
+        const { error } = await supabase.auth.getSession()
         
         if (!error) {
           // Try to initiate OAuth with skipBrowserRedirect to test provider
@@ -109,7 +109,7 @@ export default function LoginPage() {
         toast.info('Google sign-in is not currently available. Please use email/password.')
         return
       }
-    } catch (error: unknown) {
+    } catch {
       // Hide Google auth on any error
       setShowGoogleAuth(false)
       toast.info('Google sign-in is not currently available. Please use email/password.')
