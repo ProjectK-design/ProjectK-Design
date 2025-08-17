@@ -164,21 +164,30 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
       let totalGoalsCompleted = 0
 
       goals?.forEach((goal: Goal) => {
+        // Total XP is sum of all earned XP
         totalXP += goal.xp_earned
+        
+        // Total goals completed is only goals that are currently completed
         if (goal.completed) totalGoalsCompleted++
         
         const goalUpdated = new Date(goal.updated_at)
         
-        if (goalUpdated >= oneWeekAgo) {
+        // For weekly stats - only count if goal has XP earned and was updated this week
+        // This ensures uncompleted goals (xp_earned = 0) don't count
+        if (goal.xp_earned > 0 && goalUpdated >= oneWeekAgo) {
           weeklyXP += goal.xp_earned
-          if (goal.completed && goalUpdated >= oneWeekAgo) {
+          // Only count as completed if it's currently completed
+          if (goal.completed) {
             weeklyGoalsCompleted++
           }
         }
         
-        if (goalUpdated >= oneMonthAgo) {
+        // For monthly stats - only count if goal has XP earned and was updated this month
+        // This ensures uncompleted goals (xp_earned = 0) don't count
+        if (goal.xp_earned > 0 && goalUpdated >= oneMonthAgo) {
           monthlyXP += goal.xp_earned
-          if (goal.completed && goalUpdated >= oneMonthAgo) {
+          // Only count as completed if it's currently completed
+          if (goal.completed) {
             monthlyGoalsCompleted++
           }
         }
