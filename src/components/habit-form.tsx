@@ -90,7 +90,7 @@ export function HabitForm({ onHabitCreated }: HabitFormProps) {
         deadline: null, // Habits don't have deadlines
         xp_value: Number(data.xp_value) || 10,
         user_id: user?.id || null,
-        habit_type: data.habit_type,
+        habit_type: selectedHabitType, // Use the selected habit type from state
         recurrence_pattern: null, // Can be expanded later for custom patterns
         calendar_event_id: null,
         auto_created_from_calendar: false,

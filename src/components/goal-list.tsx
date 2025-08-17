@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth'
 import { Goal } from '@/lib/database.types'
 import { toast } from 'sonner'
 import { GoalCard } from './goal-card'
+import { HabitCard } from './habit-card'
 
 interface GoalListProps {
   refreshTrigger?: number
@@ -18,9 +19,10 @@ interface GoalListProps {
     sortBy: 'created' | 'deadline' | 'progress' | 'xp'
     sortOrder: 'asc' | 'desc'
   }
+  viewMode?: 'goals' | 'habits'
 }
 
-export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListProps) {
+export function GoalList({ refreshTrigger, onGoalUpdated, filters, viewMode = 'goals' }: GoalListProps) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
@@ -178,6 +180,51 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
     }
   }
 
+  const completeHabit = async (habitId: string) => {
+    const habit = goals.find(g => g.id === habitId)
+    if (!habit) return
+
+    setUpdatingGoals(prev => new Set(prev).add(habitId))
+    
+    try {
+      const xpToAward = habit.xp_value
+      const today = new Date().toISOString().split('T')[0]
+      
+      const updateData = {
+        completed: true,
+        xp_earned: xpToAward,
+        current_value: habit.target_value,
+        streak_count: (habit.streak_count || 0) + 1,
+        last_completed_date: today
+      }
+      
+      const { error } = await supabase
+        .from('goals')
+        .update(updateData)
+        .eq('id', habitId)
+
+      if (error) throw error
+
+      setGoals(prev => prev.map(g => 
+        g.id === habitId 
+          ? { ...g, ...updateData }
+          : g
+      ))
+
+      toast.success(`Habit completed! +${habit.xp_value} XP earned! 🎉`)
+      onGoalUpdated?.()
+    } catch (error) {
+      console.error('Error completing habit:', error)
+      toast.error('Failed to complete habit')
+    } finally {
+      setUpdatingGoals(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(habitId)
+        return newSet
+      })
+    }
+  }
+
   const toggleComplete = async (goalId: string) => {
     const goal = goals.find(g => g.id === goalId)
     if (!goal) return
@@ -187,14 +234,28 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
     try {
       const newCompletedStatus = !goal.completed
       const xpToAward = newCompletedStatus ? goal.xp_value : 0
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      
+      // For habits, update streak and last completed date
+      const updateData: Partial<Goal> = {
+        completed: newCompletedStatus,
+        xp_earned: xpToAward,
+        current_value: newCompletedStatus ? goal.target_value : goal.current_value
+      }
+
+      // If this is a habit and being completed, update habit-specific fields
+      if (goal.habit_type && goal.habit_type !== 'one_time' && newCompletedStatus) {
+        updateData.streak_count = (goal.streak_count || 0) + 1
+        updateData.last_completed_date = today
+      } else if (goal.habit_type && goal.habit_type !== 'one_time' && !newCompletedStatus) {
+        // If uncompleting a habit, reset streak
+        updateData.streak_count = 0
+        updateData.last_completed_date = null
+      }
       
       const { error } = await supabase
         .from('goals')
-        .update({ 
-          completed: newCompletedStatus,
-          xp_earned: xpToAward,
-          current_value: newCompletedStatus ? goal.target_value : goal.current_value
-        })
+        .update(updateData)
         .eq('id', goalId)
 
       if (error) throw error
@@ -203,9 +264,7 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
         g.id === goalId 
           ? { 
               ...g, 
-              completed: newCompletedStatus, 
-              xp_earned: xpToAward,
-              current_value: newCompletedStatus ? goal.target_value : g.current_value
+              ...updateData
             }
           : g
       ))
@@ -227,7 +286,7 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading goals...</div>
+    return <div className="text-center py-8">Loading {viewMode}...</div>
   }
 
   if (goals.length === 0) {
@@ -244,7 +303,12 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
     return (
       <Card className="text-center py-8">
         <CardContent>
-          <p className="text-muted-foreground">No goals match your current filters.</p>
+          <p className="text-muted-foreground">
+            {viewMode === 'habits' 
+              ? 'No habits found. Create your first habit to start building consistency!' 
+              : 'No goals match your current filters.'
+            }
+          </p>
         </CardContent>
       </Card>
     )
@@ -252,19 +316,40 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListPro
 
   return (
     <div className="space-y-4">
-      {filteredAndSortedGoals.map((goal) => (
-        <GoalCard
-          key={goal.id}
-          goal={goal}
-          onGoalUpdated={() => {
-            fetchGoals()
-            onGoalUpdated?.()
-          }}
-          isUpdating={updatingGoals.has(goal.id)}
-          onUpdateProgress={updateProgress}
-          onToggleComplete={toggleComplete}
-        />
-      ))}
+      {filteredAndSortedGoals.map((goal) => {
+        // Render HabitCard for habits, GoalCard for traditional goals
+        const isHabit = goal.habit_type && goal.habit_type !== 'one_time'
+        
+        if (isHabit) {
+          return (
+            <HabitCard
+              key={goal.id}
+              habit={goal}
+              onHabitUpdated={() => {
+                fetchGoals()
+                onGoalUpdated?.()
+              }}
+              isUpdating={updatingGoals.has(goal.id)}
+              onCompleteHabit={completeHabit}
+              onToggleComplete={toggleComplete}
+            />
+          )
+        } else {
+          return (
+            <GoalCard
+              key={goal.id}
+              goal={goal}
+              onGoalUpdated={() => {
+                fetchGoals()
+                onGoalUpdated?.()
+              }}
+              isUpdating={updatingGoals.has(goal.id)}
+              onUpdateProgress={updateProgress}
+              onToggleComplete={toggleComplete}
+            />
+          )
+        }
+      })}
     </div>
   )
 }

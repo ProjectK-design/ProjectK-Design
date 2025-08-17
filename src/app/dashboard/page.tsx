@@ -46,9 +46,11 @@ export default function Dashboard() {
   // Filter goals vs habits based on view mode
   const filteredItems = useMemo(() => {
     if (viewMode === 'habits') {
-      return goals.filter(goal => goal.habit_type !== 'one_time' || goal.habit_type !== undefined)
+      // Show items that are habits (not one-time goals)
+      return goals.filter(goal => goal.habit_type && goal.habit_type !== 'one_time')
     } else {
-      return goals.filter(goal => goal.habit_type === 'one_time' || goal.habit_type === undefined)
+      // Show items that are traditional goals (one-time or undefined habit_type)
+      return goals.filter(goal => !goal.habit_type || goal.habit_type === 'one_time')
     }
   }, [goals, viewMode])
 
@@ -198,6 +200,7 @@ export default function Dashboard() {
               refreshTrigger={refreshTrigger} 
               onGoalUpdated={handleGoalUpdated}
               filters={filters}
+              viewMode={viewMode}
             />
           </div>
         </div>
