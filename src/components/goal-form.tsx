@@ -46,12 +46,14 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
       const goalData: GoalInsert = {
         title: data.title,
         description: data.description || null,
-        target_value: data.target_value,
+        target_value: Number(data.target_value),
         unit: data.unit,
         category: data.category || null,
         deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
-        xp_value: data.xp_value || 10,
+        xp_value: Number(data.xp_value) || 10,
       }
+
+      console.log('Submitting goal data:', goalData)
 
       const { error } = await supabase
         .from('goals')
@@ -66,7 +68,7 @@ export function GoalForm({ onGoalCreated }: GoalFormProps) {
       reset({
         title: '',
         description: '',
-        target_value: 0,
+        target_value: undefined,
         unit: '',
         category: '',
         deadline: '',
