@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { GoalForm } from '@/components/goal-form'
+import { HabitForm } from '@/components/habit-form'
 import { GoalList } from '@/components/goal-list'
 import { XPBar } from '@/components/xp-bar'
 import { BurgerMenu } from '@/components/burger-menu'
@@ -9,12 +10,14 @@ import { GoalFiltersComponent, type GoalFilters } from '@/components/goal-filter
 import { AuthGuard } from '@/components/auth-guard'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Target } from 'lucide-react'
+import { Plus, Target, Repeat } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Goal } from '@/lib/database.types'
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false)
+  const [viewMode, setViewMode] = useState<'goals' | 'habits'>('habits') // Default to habits
+  const [formType, setFormType] = useState<'goal' | 'habit'>('habit')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [goals, setGoals] = useState<Goal[]>([])
   const [filters, setFilters] = useState<GoalFilters>({
@@ -35,13 +38,27 @@ export default function Dashboard() {
     setRefreshTrigger(prev => prev + 1)
   }
 
-  // Extract unique categories from goals for filter dropdown
+  const handleCreateNew = (type: 'goal' | 'habit') => {
+    setFormType(type)
+    setShowForm(true)
+  }
+
+  // Filter goals vs habits based on view mode
+  const filteredItems = useMemo(() => {
+    if (viewMode === 'habits') {
+      return goals.filter(goal => goal.habit_type !== 'one_time' || goal.habit_type !== undefined)
+    } else {
+      return goals.filter(goal => goal.habit_type === 'one_time' || goal.habit_type === undefined)
+    }
+  }, [goals, viewMode])
+
+  // Extract unique categories from current view for filter dropdown
   const categories = useMemo(() => {
-    const cats = goals
-      .map(goal => goal.category)
+    const cats = filteredItems
+      .map(item => item.category)
       .filter((category): category is string => Boolean(category))
     return [...new Set(cats)]
-  }, [goals])
+  }, [filteredItems])
 
   // Fetch goals to get categories for filtering
   useEffect(() => {
@@ -85,10 +102,41 @@ export default function Dashboard() {
           {/* Main Header */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Target className="h-8 w-8" />
+              {viewMode === 'habits' ? (
+                <Repeat className="h-8 w-8" />
+              ) : (
+                <Target className="h-8 w-8" />
+              )}
               <h1 className="text-4xl font-bold">Project K</h1>
             </div>
-            <p className="text-muted-foreground text-lg">Track your goals and make progress every day</p>
+            <p className="text-muted-foreground text-lg">
+              {viewMode === 'habits' 
+                ? 'Build lasting habits and track your daily progress' 
+                : 'Track your goals and make progress every day'
+              }
+            </p>
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button
+                variant={viewMode === 'habits' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('habits')}
+                className="flex items-center gap-2"
+              >
+                <Repeat className="h-4 w-4" />
+                Habits
+              </Button>
+              <Button
+                variant={viewMode === 'goals' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('goals')}
+                className="flex items-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                Goals
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -98,19 +146,34 @@ export default function Dashboard() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/3">
             {!showForm ? (
-              <div className="sticky top-8">
+              <div className="sticky top-8 space-y-3">
                 <Button 
-                  onClick={() => setShowForm(true)} 
+                  onClick={() => handleCreateNew(viewMode === 'habits' ? 'habit' : 'goal')} 
                   className="w-full"
                   size="lg"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Create New Goal
+                  Create New {viewMode === 'habits' ? 'Habit' : 'Goal'}
+                </Button>
+                
+                {/* Quick action for the other type */}
+                <Button 
+                  variant="outline"
+                  onClick={() => handleCreateNew(viewMode === 'habits' ? 'goal' : 'habit')} 
+                  className="w-full"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Or create {viewMode === 'habits' ? 'goal' : 'habit'}
                 </Button>
               </div>
             ) : (
               <div className="sticky top-8">
-                <GoalForm onGoalCreated={handleGoalCreated} />
+                {formType === 'habit' ? (
+                  <HabitForm onHabitCreated={handleGoalCreated} />
+                ) : (
+                  <GoalForm onGoalCreated={handleGoalCreated} />
+                )}
                 <Button 
                   variant="outline" 
                   onClick={() => setShowForm(false)}
