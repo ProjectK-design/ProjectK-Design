@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { Goal } from '@/lib/database.types'
-import { Zap, Calendar, TrendingUp, Trophy, Star, Target, Fire, Award } from 'lucide-react'
+import { Zap, Calendar, TrendingUp, Trophy, Star, Target, Flame, Award } from 'lucide-react'
 
 interface XPStats {
   totalXP: number
@@ -135,7 +135,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
       id: 'streak-master',
       title: 'Streak Master',
       description: 'Maintain a 7-day streak',
-      icon: <Fire className="h-4 w-4" />,
+      icon: <Flame className="h-4 w-4" />,
       unlocked: stats.longestStreak >= 7,
       progress: Math.min(stats.longestStreak, 7),
       maxProgress: 7
@@ -265,7 +265,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
             <div className="relative">
               <Zap className="h-6 w-6 text-yellow-500 animate-pulse" />
               {xpStats.currentStreak > 0 && (
-                <Fire className="h-3 w-3 text-orange-500 absolute -top-1 -right-1" />
+                <Flame className="h-3 w-3 text-orange-500 absolute -top-1 -right-1" />
               )}
             </div>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -334,7 +334,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
 
           <div className="bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-950 dark:to-red-900 p-4 rounded-xl border border-orange-200/50 dark:border-orange-800/50">
             <div className="flex items-center gap-2 mb-2">
-              <Fire className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <Flame className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               <span className="font-medium text-sm">Current Streak</span>
             </div>
             <div className="space-y-1">
