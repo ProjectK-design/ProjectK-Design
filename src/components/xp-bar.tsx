@@ -102,10 +102,9 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
     // Calculate current streak
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const lastGoalDate = lastDate
     
-    if (lastGoalDate) {
-      const daysSinceLastGoal = Math.floor((today.getTime() - lastGoalDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (lastDate) {
+      const daysSinceLastGoal = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
       currentStreak = daysSinceLastGoal <= 1 ? tempStreak : 0
     }
     
