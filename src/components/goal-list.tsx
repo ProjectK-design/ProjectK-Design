@@ -45,7 +45,20 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
       if (!goal) return
 
       const isCompleted = newValue >= goal.target_value
-      const xpToAward = isCompleted && !goal.completed ? goal.xp_value : goal.xp_earned
+      const progressPercentage = Math.min(newValue / goal.target_value, 1)
+      
+      // Award XP proportionally to progress, but only award full XP when completed
+      let xpToAward: number
+      if (isCompleted && !goal.completed) {
+        // First time completing - award full XP
+        xpToAward = goal.xp_value
+      } else if (isCompleted) {
+        // Already completed - keep existing XP
+        xpToAward = goal.xp_earned
+      } else {
+        // Partial progress - award proportional XP (rounded to 1 decimal)
+        xpToAward = Math.round(goal.xp_value * progressPercentage * 10) / 10
+      }
       
       const { error } = await supabase
         .from('goals')
@@ -66,7 +79,15 @@ export function GoalList({ refreshTrigger }: GoalListProps) {
 
       if (isCompleted && !goal.completed) {
         toast.success(`Goal completed! +${goal.xp_value} XP earned! 🎉`)
+      } else if (!isCompleted && xpToAward > goal.xp_earned) {
+        const xpGained = Math.round((xpToAward - goal.xp_earned) * 10) / 10
+        if (xpGained > 0) {
+          toast.success(`Progress updated! +${xpGained} XP earned!`)
+        }
       }
+      
+      // Trigger data refresh
+      fetchGoals()
     } catch (error) {
       console.error('Error updating goal:', error)
       toast.error('Failed to update progress')

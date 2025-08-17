@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Goal } from '@/lib/database.types'
 import { GoalActions } from '@/components/goal-actions'
 import { GoalEditForm } from '@/components/goal-edit-form'
-import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { 
   ChevronDown, 
@@ -56,25 +55,9 @@ export function GoalCard({
   }
 
   const handleGoalComplete = async () => {
-    // Award XP when completing a goal
     if (!goal.completed) {
-      try {
-        const { error } = await supabase
-          .from('goals')
-          .update({ 
-            xp_earned: goal.xp_value,
-            completed: true,
-            current_value: goal.target_value
-          })
-          .eq('id', goal.id)
-
-        if (error) throw error
-        toast.success(`Goal completed! +${goal.xp_value} XP earned! 🎉`)
-        onGoalUpdated()
-      } catch (error) {
-        console.error('Error completing goal:', error)
-        toast.error('Failed to complete goal')
-      }
+      // Use the existing updateProgress function to maintain consistency
+      await onUpdateProgress(goal.id, goal.target_value)
     } else {
       await onToggleComplete(goal.id)
     }
