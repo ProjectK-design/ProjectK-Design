@@ -37,6 +37,11 @@ export function BurgerMenu() {
     setIsOpen(false)
   }
 
+  const handleSettings = () => {
+    // Open settings modal/page
+    toast.info('Settings panel coming soon! 🛠️')
+    setIsOpen(false)
+  }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -106,7 +111,10 @@ export function BurgerMenu() {
         <DropdownMenuSeparator />
         
         {/* Settings */}
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem 
+          className="cursor-pointer"
+          onClick={handleSettings}
+        >
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </DropdownMenuItem>

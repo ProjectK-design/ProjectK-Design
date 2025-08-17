@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { Goal } from '@/lib/database.types'
@@ -10,9 +10,16 @@ import { GoalCard } from './goal-card'
 interface GoalListProps {
   refreshTrigger?: number
   onGoalUpdated?: () => void
+  filters?: {
+    search: string
+    status: 'all' | 'active' | 'completed'
+    category: string
+    sortBy: 'created' | 'deadline' | 'progress' | 'xp'
+    sortOrder: 'asc' | 'desc'
+  }
 }
 
-export function GoalList({ refreshTrigger, onGoalUpdated }: GoalListProps) {
+export function GoalList({ refreshTrigger, onGoalUpdated, filters }: GoalListProps) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGoals, setUpdatingGoals] = useState<Set<string>>(new Set())
@@ -37,6 +44,66 @@ export function GoalList({ refreshTrigger, onGoalUpdated }: GoalListProps) {
   useEffect(() => {
     fetchGoals()
   }, [refreshTrigger])
+
+  // Filter and sort goals based on filters
+  const filteredAndSortedGoals = useMemo(() => {
+    if (!filters) return goals
+
+    let filtered = goals
+
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase()
+      filtered = filtered.filter(goal => 
+        goal.title.toLowerCase().includes(searchLower) ||
+        goal.description?.toLowerCase().includes(searchLower) ||
+        goal.category?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Apply status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(goal => 
+        filters.status === 'completed' ? goal.completed : !goal.completed
+      )
+    }
+
+    // Apply category filter
+    if (filters.category) {
+      filtered = filtered.filter(goal => goal.category === filters.category)
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: number, bValue: number
+
+      switch (filters.sortBy) {
+        case 'deadline':
+          aValue = a.deadline ? new Date(a.deadline).getTime() : 0
+          bValue = b.deadline ? new Date(b.deadline).getTime() : 0
+          break
+        case 'progress':
+          aValue = a.current_value / a.target_value
+          bValue = b.current_value / b.target_value
+          break
+        case 'xp':
+          aValue = a.xp_value
+          bValue = b.xp_value
+          break
+        default: // 'created'
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
+      }
+
+      if (filters.sortOrder === 'asc') {
+        return aValue - bValue
+      } else {
+        return bValue - aValue
+      }
+    })
+
+    return filtered
+  }, [goals, filters])
 
   const updateProgress = async (goalId: string, newValue: number) => {
     setUpdatingGoals(prev => new Set(prev).add(goalId))
@@ -163,9 +230,19 @@ export function GoalList({ refreshTrigger, onGoalUpdated }: GoalListProps) {
     )
   }
 
+  if (filteredAndSortedGoals.length === 0) {
+    return (
+      <Card className="text-center py-8">
+        <CardContent>
+          <p className="text-muted-foreground">No goals match your current filters.</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {goals.map((goal) => (
+      {filteredAndSortedGoals.map((goal) => (
         <GoalCard
           key={goal.id}
           goal={goal}
