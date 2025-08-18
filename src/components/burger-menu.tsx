@@ -19,9 +19,11 @@ import {
   Monitor, 
   LogOut, 
   Settings,
-  User
+  User,
+  UserCog
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getUserDisplayName } from '@/lib/utils'
 
 export function BurgerMenu() {
   const { theme, setTheme } = useTheme()
@@ -46,8 +48,7 @@ export function BurgerMenu() {
   }
 
   const handleSettings = () => {
-    // Open settings modal/page
-    toast.info('Settings panel coming soon! 🛠️')
+    router.push('/settings')
     setIsOpen(false)
   }
 
@@ -72,10 +73,10 @@ export function BurgerMenu() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium">
-              {user?.email?.split('@')[0] || 'Guest'}
+              {getUserDisplayName(user)}
             </span>
             <span className="text-xs text-muted-foreground">
-              {user ? 'Authenticated' : 'Guest Mode'}
+              {user ? user.email : 'Guest Mode'}
             </span>
           </div>
         </div>
@@ -121,6 +122,20 @@ export function BurgerMenu() {
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
+        
+        {/* Profile */}
+        {user && (
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => {
+              router.push('/profile')
+              setIsOpen(false)
+            }}
+          >
+            <UserCog className="h-4 w-4 mr-2" />
+            Profile
+          </DropdownMenuItem>
+        )}
         
         {/* Settings */}
         <DropdownMenuItem 

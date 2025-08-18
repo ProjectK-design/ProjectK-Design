@@ -29,7 +29,7 @@ export function AuthGuard({ children, requireAuth = false }: AuthGuardProps) {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Target className="h-8 w-8" />
-            <h1 className="text-3xl font-bold">Project K</h1>
+            <h1 className="text-3xl font-bold">Project You</h1>
           </div>
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -48,7 +48,7 @@ export function AuthGuard({ children, requireAuth = false }: AuthGuardProps) {
           <CardContent className="pt-6 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Target className="h-6 w-6" />
-              <h2 className="text-xl font-bold">Project K</h2>
+              <h2 className="text-xl font-bold">Project You</h2>
             </div>
             <p className="text-muted-foreground mb-4">
               Please sign in to access your goals and track your progress.

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { Goal } from '@/lib/database.types'
-import { Zap, Calendar, TrendingUp, Trophy, Star, Target, Flame, Award } from 'lucide-react'
+import { Zap, Calendar, TrendingUp, Trophy, Star, Target, Flame, Award, Crown, Gem, Rocket, Heart } from 'lucide-react'
+// import { getUserDisplayName } from '@/lib/utils' // Future use
 
 interface XPStats {
   totalXP: number
@@ -83,53 +84,93 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
     return { currentStreak, longestStreak }
   }
 
-  const generateAchievements = (stats: XPStats): Achievement[] => [
-    {
-      id: 'first-goal',
-      title: 'Getting Started',
-      description: 'Complete your first goal',
-      icon: <Target className="h-4 w-4" />,
-      unlocked: stats.totalGoalsCompleted >= 1,
-      progress: Math.min(stats.totalGoalsCompleted, 1),
-      maxProgress: 1
-    },
-    {
-      id: 'goal-crusher',
-      title: 'Goal Crusher',
-      description: 'Complete 10 goals',
-      icon: <Trophy className="h-4 w-4" />,
-      unlocked: stats.totalGoalsCompleted >= 10,
-      progress: Math.min(stats.totalGoalsCompleted, 10),
-      maxProgress: 10
-    },
-    {
-      id: 'streak-master',
-      title: 'Streak Master',
-      description: 'Maintain a 7-day streak',
-      icon: <Flame className="h-4 w-4" />,
-      unlocked: stats.longestStreak >= 7,
-      progress: Math.min(stats.longestStreak, 7),
-      maxProgress: 7
-    },
-    {
-      id: 'xp-collector',
-      title: 'XP Collector',
-      description: 'Earn 1000 XP',
-      icon: <Star className="h-4 w-4" />,
-      unlocked: stats.totalXP >= 1000,
-      progress: Math.min(stats.totalXP, 1000),
-      maxProgress: 1000
-    },
-    {
-      id: 'level-up',
-      title: 'Level Up',
-      description: 'Reach Level 5',
-      icon: <Award className="h-4 w-4" />,
-      unlocked: stats.level >= 5,
-      progress: Math.min(stats.level, 5),
-      maxProgress: 5
-    }
-  ]
+  const generateAchievements = useCallback((stats: XPStats): Achievement[] => {
+    const firstName = user?.user_metadata?.first_name
+    
+    return [
+      {
+        id: 'first-goal',
+        title: firstName ? `${firstName}'s First Win` : 'Getting Started',
+        description: 'Complete your first goal',
+        icon: <Target className="h-4 w-4" />,
+        unlocked: stats.totalGoalsCompleted >= 1,
+        progress: Math.min(stats.totalGoalsCompleted, 1),
+        maxProgress: 1
+      },
+      {
+        id: 'goal-crusher',
+        title: firstName ? `${firstName} the Crusher` : 'Goal Crusher',
+        description: 'Complete 10 goals',
+        icon: <Trophy className="h-4 w-4" />,
+        unlocked: stats.totalGoalsCompleted >= 10,
+        progress: Math.min(stats.totalGoalsCompleted, 10),
+        maxProgress: 10
+      },
+      {
+        id: 'streak-master',
+        title: firstName ? `${firstName}'s Fire` : 'Streak Master',
+        description: 'Maintain a 7-day streak',
+        icon: <Flame className="h-4 w-4" />,
+        unlocked: stats.longestStreak >= 7,
+        progress: Math.min(stats.longestStreak, 7),
+        maxProgress: 7
+      },
+      {
+        id: 'xp-collector',
+        title: firstName ? `${firstName}'s Fortune` : 'XP Collector',
+        description: 'Earn 1000 XP',
+        icon: <Star className="h-4 w-4" />,
+        unlocked: stats.totalXP >= 1000,
+        progress: Math.min(stats.totalXP, 1000),
+        maxProgress: 1000
+      },
+      {
+        id: 'level-up',
+        title: firstName ? `${firstName} Rising` : 'Level Up',
+        description: 'Reach Level 5',
+        icon: <Award className="h-4 w-4" />,
+        unlocked: stats.level >= 5,
+        progress: Math.min(stats.level, 5),
+        maxProgress: 5
+      },
+      {
+        id: 'habit-builder',
+        title: firstName ? `${firstName}'s Routine` : 'Habit Builder',
+        description: 'Complete 5 habits',
+        icon: <Heart className="h-4 w-4" />,
+        unlocked: stats.totalGoalsCompleted >= 5, // Could be enhanced to count habits specifically
+        progress: Math.min(stats.totalGoalsCompleted, 5),
+        maxProgress: 5
+      },
+      {
+        id: 'consistency-king',
+        title: firstName ? `${firstName} the Consistent` : 'Consistency King',
+        description: 'Maintain a 30-day streak',
+        icon: <Crown className="h-4 w-4" />,
+        unlocked: stats.longestStreak >= 30,
+        progress: Math.min(stats.longestStreak, 30),
+        maxProgress: 30
+      },
+      {
+        id: 'xp-legend',
+        title: firstName ? `${firstName} the Legend` : 'XP Legend',
+        description: 'Earn 5000 XP',
+        icon: <Gem className="h-4 w-4" />,
+        unlocked: stats.totalXP >= 5000,
+        progress: Math.min(stats.totalXP, 5000),
+        maxProgress: 5000
+      },
+      {
+        id: 'rocket-achiever',
+        title: firstName ? `${firstName}'s Rocket` : 'Rocket Achiever',
+        description: 'Reach Level 10',
+        icon: <Rocket className="h-4 w-4" />,
+        unlocked: stats.level >= 10,
+        progress: Math.min(stats.level, 10),
+        maxProgress: 10
+      }
+    ]
+  }, [user])
 
   const fetchXPStats = useCallback(async () => {
     try {
@@ -219,7 +260,7 @@ export function XPBar({ refreshTrigger }: XPBarProps) {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, generateAchievements])
 
   useEffect(() => {
     fetchXPStats()

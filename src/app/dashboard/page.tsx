@@ -8,11 +8,13 @@ import { XPBar } from '@/components/xp-bar'
 import { BurgerMenu } from '@/components/burger-menu'
 import { GoalFiltersComponent, type GoalFilters } from '@/components/goal-filters'
 import { AuthGuard } from '@/components/auth-guard'
+import { WelcomeOnboarding } from '@/components/welcome-onboarding'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Plus, Target, Repeat } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Goal } from '@/lib/database.types'
+import { getProjectBranding, getPersonalizedGreeting } from '@/lib/utils'
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false)
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [formType, setFormType] = useState<'goal' | 'habit'>('habit')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [goals, setGoals] = useState<Goal[]>([])
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [filters, setFilters] = useState<GoalFilters>({
     search: '',
     status: 'all',
@@ -28,6 +31,8 @@ export default function Dashboard() {
     sortOrder: 'desc'
   })
   const { user } = useAuth()
+  const projectBranding = getProjectBranding(user)
+  const personalizedGreeting = getPersonalizedGreeting(user)
 
   const handleGoalCreated = () => {
     setShowForm(false)
@@ -62,7 +67,7 @@ export default function Dashboard() {
     return [...new Set(cats)]
   }, [filteredItems])
 
-  // Fetch goals to get categories for filtering
+  // Fetch goals to get categories for filtering and check for new users
   useEffect(() => {
     const fetchGoals = async () => {
       try {
@@ -79,7 +84,15 @@ export default function Dashboard() {
 
         const { data } = await query.order('created_at', { ascending: false })
         
-        if (data) setGoals(data)
+        if (data) {
+          setGoals(data)
+          
+          // Show onboarding for new users with no goals/habits
+          const hasCompletedOnboarding = localStorage.getItem(`onboarding_completed_${user?.id}`)
+          if (user && data.length === 0 && !hasCompletedOnboarding) {
+            setShowOnboarding(true)
+          }
+        }
       } catch (error) {
         console.error('Error fetching goals for categories:', error)
       }
@@ -87,8 +100,16 @@ export default function Dashboard() {
     fetchGoals()
   }, [refreshTrigger, user])
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false)
+    if (user) {
+      localStorage.setItem(`onboarding_completed_${user.id}`, 'true')
+    }
+  }
+
   return (
     <AuthGuard requireAuth={true}>
+      {showOnboarding && <WelcomeOnboarding onComplete={handleOnboardingComplete} />}
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
         <header className="mb-8">
@@ -96,7 +117,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Target className="h-6 w-6" />
-              <span className="text-xl font-bold">Project K</span>
+              <span className="text-xl font-bold">{projectBranding}</span>
             </div>
             <BurgerMenu />
           </div>
@@ -109,14 +130,19 @@ export default function Dashboard() {
               ) : (
                 <Target className="h-8 w-8" />
               )}
-              <h1 className="text-4xl font-bold">Project K</h1>
+              <h1 className="text-4xl font-bold">{projectBranding}</h1>
             </div>
-            <p className="text-muted-foreground text-lg">
-              {viewMode === 'habits' 
-                ? 'Build lasting habits and track your daily progress' 
-                : 'Track your goals and make progress every day'
-              }
-            </p>
+            <div className="space-y-2">
+              <p className="text-lg font-medium text-foreground">
+                {personalizedGreeting}
+              </p>
+              <p className="text-muted-foreground">
+                {viewMode === 'habits' 
+                  ? 'Build lasting habits and track your daily progress' 
+                  : 'Track your goals and make progress every day'
+                }
+              </p>
+            </div>
             
             {/* View Mode Toggle */}
             <div className="flex items-center justify-center gap-2 mt-4">

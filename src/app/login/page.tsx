@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Target, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Target, Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -40,6 +42,13 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: `${firstName} ${lastName}`.trim(),
+            }
+          }
         })
         
         if (error) throw error
@@ -73,7 +82,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Target className="h-8 w-8" />
-            <h1 className="text-3xl font-bold">Project K</h1>
+            <h1 className="text-3xl font-bold">Project You</h1>
           </div>
           <p className="text-muted-foreground">
             {isSignUp ? 'Create your account to start tracking goals' : 'Welcome back! Sign in to your account'}
@@ -91,6 +100,43 @@ export default function LoginPage() {
 
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="firstName"
+                          type="text"
+                          placeholder="First name"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="pl-10"
+                          required={isSignUp}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="lastName"
+                          type="text"
+                          placeholder="Last name"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="pl-10"
+                          required={isSignUp}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">

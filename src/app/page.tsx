@@ -25,7 +25,7 @@ export default function LandingPage() {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Target className="h-8 w-8 animate-pulse" />
-            <h1 className="text-3xl font-bold">Project K</h1>
+            <h1 className="text-3xl font-bold">Project You</h1>
           </div>
           <p className="text-muted-foreground">Loading...</p>
         </div>
@@ -44,7 +44,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-3 mb-6">
               <Target className="h-12 w-12 text-primary" />
               <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                Project K
+                Project You
               </h1>
             </div>
             
@@ -83,7 +83,7 @@ export default function LandingPage() {
         {/* Features Section */}
         <div className="container mx-auto px-4 py-16 bg-muted/30">
           <div className="max-w-6xl mx-auto">
-            <h3 className="text-3xl font-bold text-center mb-12">Why Choose Project K?</h3>
+            <h3 className="text-3xl font-bold text-center mb-12">Why Choose Project You?</h3>
             
             <div className="grid md:grid-cols-3 gap-8">
               {/* Feature 1 */}
@@ -188,7 +188,7 @@ export default function LandingPage() {
             <div className="bg-primary/5 rounded-2xl p-8">
               <h4 className="text-2xl font-bold mb-4">Ready to Transform Your Goals?</h4>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Join thousands of achievers who use Project K to turn their aspirations into reality. 
+                Join thousands of achievers who use Project You to turn their aspirations into reality. 
                 Start your journey today—it&apos;s completely free.
               </p>
               <Button 
@@ -208,7 +208,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Target className="h-5 w-5 text-muted-foreground" />
-              <span className="text-muted-foreground">Project K - Goal Tracking Made Simple</span>
+              <span className="text-muted-foreground">Project You - Goal Tracking Made Simple</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Built with Next.js, React, and Supabase. Designed for achievers.

@@ -8,6 +8,7 @@ import { Goal } from '@/lib/database.types'
 import { toast } from 'sonner'
 import { GoalCard } from './goal-card'
 import { HabitCard } from './habit-card'
+import { ContentLoading } from './loading-spinner'
 
 interface GoalListProps {
   refreshTrigger?: number
@@ -286,7 +287,7 @@ export function GoalList({ refreshTrigger, onGoalUpdated, filters, viewMode = 'g
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading {viewMode}...</div>
+    return <ContentLoading message={`Loading ${viewMode}...`} />
   }
 
   if (goals.length === 0) {

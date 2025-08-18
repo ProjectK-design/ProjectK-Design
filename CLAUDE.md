@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project K is a goal tracking application built with Next.js 15, React 19, TypeScript, and Supabase. Users can create quantifiable goals with targets, track progress incrementally, and mark goals as complete.
+Project K is a client-side rendered goal tracking application built with Next.js 15 (static export), React 19, TypeScript, and Supabase. Users can create quantifiable goals with targets, track progress incrementally, and mark goals as complete. The app is fully client-side to minimize server costs and can be deployed as static files.
 
 ## Development Commands
 
 - `npm run dev` - Start development server with Turbopack (http://localhost:3000)
-- `npm run build` - Create production build
-- `npm run start` - Start production server
+- `npm run build` / `npm run export` - Create static build for deployment
+- `npm run serve` - Serve the static build locally for testing
+- `npm run start` - Start Next.js server (not needed for static deployment)
 - `npm run lint` - Run ESLint checks
 
 ## Database Setup
@@ -51,10 +52,16 @@ Environment variables required:
 
 ## Deployment
 
-The app is deployed on Vercel with:
-- Automatic builds from the main branch
-- Environment variables configured in Vercel dashboard
-- Production URL: https://project-qrsgqe1tg-kierans-projects-7c2efff2.vercel.app
+The app can be deployed as static files to any hosting service:
+- **Static hosting**: Netlify, Vercel, GitHub Pages, AWS S3, etc.
+- **Build output**: `out/` directory contains all static files
+- **Environment variables**: Must be available at build time (prefixed with `NEXT_PUBLIC_`)
+- **No server required**: Fully client-side application
+
+### Deployment Steps:
+1. `npm run build` - Creates static build in `out/` directory  
+2. Deploy the `out/` directory to any static hosting service
+3. Configure environment variables in your hosting provider
 
 ## Important Files
 
